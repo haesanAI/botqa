@@ -31,7 +31,7 @@ st.write("---")
 load_dotenv()
 
 #openai_key = os.getenv("OPEN_AI_API_KEY")
-openai_key = os.environ.get('OPEN_AI_API_KEY', 'default_value')
+openai_key = st.secrets["OPEN_AI_API_KEY"]
 
 
 #파일 업로드
