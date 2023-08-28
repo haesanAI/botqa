@@ -24,12 +24,14 @@ st.write("---")
 #OpenAI KEY 입력 받기
 # .env 파일이 있는 디렉토리의 경로를 지정합니다.
 # 상대 경로나 절대 경로를 사용할 수 있습니다.
-dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
+# dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
 
 # 환경 변수를 불러옵니다.
-load_dotenv(dotenv_path)
+#load_dotenv(dotenv_path)
+load_dotenv()
 
-openai_key = os.getenv("OPEN_AI_API_KEY")
+#openai_key = os.getenv("OPEN_AI_API_KEY")
+openai_key = os.environ.get('OPEN_AI_API_KEY', 'default_value')
 
 
 #파일 업로드
