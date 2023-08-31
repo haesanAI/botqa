@@ -1,3 +1,4 @@
+pinecone
 streamlit>=1.26.0
 langchain>=0.0.3
 openai
@@ -12,4 +13,3 @@ pandas
 pyarrow>=10.0.1
 bs4
 openai_embeddings
-pinecone
