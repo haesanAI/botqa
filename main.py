@@ -30,8 +30,8 @@ st.write("---")
 #load_dotenv(dotenv_path)
 load_dotenv()
 
-#openai_key = os.getenv("OPEN_AI_API_KEY")
-openai_key = st.secrets["OPEN_AI_API_KEY"]
+openai_key = os.getenv("OPEN_AI_API_KEY")
+#openai_key = st.secrets["OPEN_AI_API_KEY"]
 
 #파일 업로드
 uploaded_file = st.file_uploader("PDF 파일을 올려주세요!",type=['pdf'])
