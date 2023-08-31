@@ -100,7 +100,7 @@ from langchain.vectorstores import Chroma
 from langchain.vectorstores import Pinecone
 from langchain.document_loaders import TextLoader
 
-import pinecone
+import pinecone as pinecone
 
 try:
     # initialize pinecone
@@ -133,12 +133,6 @@ except Exception as e:
 ## retriever
 from langchain.chat_models import ChatOpenAI
 from langchain.chains import ConversationalRetrievalChain
-
-
-
-
-
-
 
 
 # llm = ChatOpenAI()
