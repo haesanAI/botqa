@@ -100,7 +100,7 @@ from langchain.vectorstores import Chroma
 from langchain.vectorstores import Pinecone
 from langchain.document_loaders import TextLoader
 
-import pinecone as pinecone
+import pinecone 
 
 try:
     # initialize pinecone
