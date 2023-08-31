@@ -3,4 +3,4 @@ openai
 pypdf
 chromadb
 tiktoken
-streamit
+streamlit
