@@ -27,7 +27,6 @@ with st.sidebar:
     openai_api_key= st.text_input("OpenAI API Key", key="chatbot_api_key", type="password")
     "[Get an OpenAI API key](https://platform.openai.com/account/api-keys)"
 
-
 llm = OpenAI(temperature=0.5, openai_api_key=openai_api_key)
 
 
@@ -98,20 +97,57 @@ except Exception as e:
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import Chroma
 
+from langchain.vectorstores import Pinecone
+from langchain.document_loaders import TextLoader
+
+import pinecone
+
+try:
+    # initialize pinecone
+    PINECONE_API_KEY="4614877b-067e-4022-8b74-d3d442e53645"
+    PINECONE_ENV="us-west4-gcp-free"
+    pinecone.init(
+        api_key=(PINECONE_API_KEY),  # find at app.pinecone.io
+        environment=(PINECONE_ENV),  # next to api key in console
+    )
+    
+    active_indexes = pinecone.list_indexes()
+    whoami = pinecone.whoami()
+    index_name = "damda"
+    index = pinecone.Index("damda")
+    describe = index.describe_index_stats()
+
+    # The OpenAI embedding model `text-embedding-ada-002 uses 1536 dimensions`
+    embeddings=OpenAIEmbeddings()
+    print(index)
+    vectorstore = Pinecone.from_documents(all_splits, embeddings,index_name=index_name)
+
+except Exception as e:
+    print("Error creating vectorstore")
+    print(whoami)
+    print(active_indexes)
+    print(describe)
+    logging.error(f"Exception occurred: {str(e)}")
+
+
 ## retriever
 from langchain.chat_models import ChatOpenAI
 from langchain.chains import ConversationalRetrievalChain
-from openai_embeddings import Embedder
+
+
+
+
+
+
 
 
 # llm = ChatOpenAI()
 def haesan_response(input_text):
     try:
         st.write("1")
-        embedder = Embedder("korean")
-        all_splits = embedder(all_splits)
         embedding = OpenAIEmbeddings(openai_api_key=openai_api_key,disallowed_special={"metadata"})
         st.write("4")
+        '''
         try:
             vectorstore = Chroma.from_documents(documents=all_splits, embedding=embedding)
         except Exception as e:
@@ -119,7 +155,7 @@ def haesan_response(input_text):
             logging.error(f"Exception occurred Chroma1: {str(e)}")
             st.write(f"Exception occurred1: {str(e)}")
             return  # 여기서 함수를 종료합니다.
-        
+        '''
         
         retriever = vectorstore.as_retriever(search_type="mmr")
         matched_docs = retriever.get_relevant_documents(input_text)
