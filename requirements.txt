@@ -1,6 +1,13 @@
-langchain
+streamlit>=1.26.0
+langchain>=0.0.3
 openai
-pypdf
-chromadb
+duckduckgo-search
+anthropic>=0.3.0
+trubrics>=1.4.3
+streamlit-feedback
+chromadb==0.3.29
 tiktoken
-streamlit
+pysqlite3-binary
+pandas
+pyarrow>=10.0.1
+bs4

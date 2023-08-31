@@ -2,88 +2,144 @@
 #import sys
 #sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 
-from langchain.document_loaders import PyPDFLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.vectorstores import Chroma
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.chat_models import ChatOpenAI
-from langchain.chains import RetrievalQA
 import streamlit as st
-import tempfile
-import os
-from dotenv import load_dotenv
-#from streamlit_extras.buy_me_a_coffee import button
-from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+import pandas as pd
+import langchain 
+import pyarrow as pyarrow
+from langchain.llms import OpenAI
+from langchain.prompts import (
+    ChatPromptTemplate,
+    MessagesPlaceholder,
+    SystemMessagePromptTemplate,
+    HumanMessagePromptTemplate,
+)
+from langchain.chains import LLMChain
+from langchain.chat_models import ChatOpenAI
+from langchain.memory import ConversationBufferMemory
+ 
+st.title("🦜🔗 Langchain Quickstart App")
 
-#button(username="jocoding", floating=True, width=221)
+st.write(langchain.__version__)
+st.write(pd.__version__)
+st.write(pyarrow.__version__)
 
-#제목
-st.title("ChatPDF")
-st.write("---")
+with st.sidebar:
+    openai_api_key= st.text_input("OpenAI API Key", key="chatbot_api_key", type="password")
+    "[Get an OpenAI API key](https://platform.openai.com/account/api-keys)"
 
-#OpenAI KEY 입력 받기
-# .env 파일이 있는 디렉토리의 경로를 지정합니다.
-# 상대 경로나 절대 경로를 사용할 수 있습니다.
-# dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
 
-# 환경 변수를 불러옵니다.
-#load_dotenv(dotenv_path)
-load_dotenv()
+llm = OpenAI(temperature=0.5, openai_api_key=openai_api_key)
 
-openai_key = os.getenv("OPEN_AI_API_KEY")
-#openai_key = st.secrets["OPEN_AI_API_KEY"]
 
-#파일 업로드
-uploaded_file = st.file_uploader("PDF 파일을 올려주세요!",type=['pdf'])
-st.write("---")
+# Prompt 
+prompt = ChatPromptTemplate(
+    messages=[
+        SystemMessagePromptTemplate.from_template(
+            "You are a nice chatbot having a conversation with a human."
+        ),
+        # The `variable_name` here is what must align with memory
+        MessagesPlaceholder(variable_name="chat_history"),
+        HumanMessagePromptTemplate.from_template("{question}")
+    ]
+)
 
-def pdf_to_document(uploaded_file):
-    temp_dir = tempfile.TemporaryDirectory()
-    temp_filepath = os.path.join(temp_dir.name, uploaded_file.name)
-    with open(temp_filepath, "wb") as f:
-        f.write(uploaded_file.getvalue())
-    loader = PyPDFLoader(temp_filepath)
-    pages = loader.load_and_split()
-    return pages
+# Notice that we `return_messages=True` to fit into the MessagesPlaceholder
+# Notice that `"chat_history"` aligns with the MessagesPlaceholder name
+memory = ConversationBufferMemory(memory_key="chat_history",return_messages=True)
+conversation = LLMChain(
+    llm=llm,
+    prompt=prompt,
+    verbose=True,
+    memory=memory
+)
 
-#업로드 되면 동작하는 코드
-if uploaded_file is not None:
-    pages = pdf_to_document(uploaded_file)
+# Notice that we just pass in the `question` variables - `chat_history` gets populated by memory
+#conversation({"question": "hi"})
+# data loader
+from langchain.document_loaders import WebBaseLoader
+from langchain.document_loaders import NotionDBLoader
+from langchain.document_loaders import ConfluenceLoader
 
-    #Split
-    text_splitter = RecursiveCharacterTextSplitter(
-        # Set a really small chunk size, just to show.
-        chunk_size = 300,
-        chunk_overlap  = 20,
-        length_function = len,
-        is_separator_regex = False,
+import logging
+logging.basicConfig(filename='error.log', level=logging.ERROR, 
+                    format='%(asctime)s - %(levelname)s - %(message)s')
+
+try:
+    
+    #loader = WebBaseLoader("https://lilianweng.github.io/posts/2023-06-23-agent/")
+    NOTION_TOKEN = "secret_wpKyZTkbCLz1KwwyEBTDSH9E2OBr8Hc3H7RhmjTznec"
+    DATABASE_ID = "55ac61ce713b46708f6dec874a8ef8e1"
+    loader = NotionDBLoader(
+        integration_token=NOTION_TOKEN,
+        database_id=DATABASE_ID,
+        request_timeout_sec=60,  # optional, defaults to 10
     )
-    texts = text_splitter.split_documents(pages)
+    data = loader.load()
+    print(data)
+except Exception as e:  # 'as e' 부분을 추가하여 예외 객체를 e 변수에 저장
+    print("Error loading data")
+    st.write(f"Exception occurred1: {str(e)}")
+    logging.error(f"Exception occurred: {str(e)}")  # 에러 메시지를 로그 파일에 기록
 
-    #Embedding
-    embeddings_model = OpenAIEmbeddings(openai_api_key=openai_key)
 
-    # load it into Chroma
-    db = Chroma.from_documents(texts, embeddings_model)
+# splitter
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 
-    #Stream 받아 줄 Hander 만들기
-    from langchain.callbacks.base import BaseCallbackHandler
-    class StreamHandler(BaseCallbackHandler):
-        def __init__(self, container, initial_text=""):
-            self.container = container
-            self.text=initial_text
-        def on_llm_new_token(self, token: str, **kwargs) -> None:
-            self.text+=token
-            self.container.markdown(self.text)
+try:
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=100, chunk_overlap=0)
+    all_splits = text_splitter.split_documents(data)
+    
+except Exception as e:
+    print("Error splitting data")
+    logging.error(f"Exception occurred: {str(e)}")  # 에러 메시지를 로그 파일에 기록
 
-    #Question
-    st.header("PDF에게 질문해보세요!!")
-    question = st.text_input('질문을 입력하세요')
+    
+# vector db
+from langchain.embeddings import OpenAIEmbeddings
+from langchain.vectorstores import Chroma
 
-    if st.button('질문하기'):
-        with st.spinner('Wait for it...'):
-            chat_box = st.empty()
-            stream_hander = StreamHandler(chat_box)
-            llm = ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0, openai_api_key=openai_key, streaming=True, callbacks=[stream_hander])
-            qa_chain = RetrievalQA.from_chain_type(llm,retriever=db.as_retriever())
-            qa_chain({"query": question})
+## retriever
+from langchain.chat_models import ChatOpenAI
+from langchain.chains import ConversationalRetrievalChain
+
+# llm = ChatOpenAI()
+def haesan_response(input_text):
+    try:
+        st.write("1")
+        embedding = OpenAIEmbeddings(openai_api_key=openai_api_key,disallowed_special={"metadata"})
+        st.write("4")
+        try:
+            vectorstore = Chroma.from_documents(documents=all_splits, embedding=embedding)
+        except Exception as e:
+            print("Error in Chroma.from_documents")
+            logging.error(f"Exception occurred Chroma1: {str(e)}")
+            st.write(f"Exception occurred1: {str(e)}")
+            return  # 여기서 함수를 종료합니다.
+        
+        
+        retriever = vectorstore.as_retriever(search_type="mmr")
+        matched_docs = retriever.get_relevant_documents(input_text)
+        for i, d in enumerate(matched_docs):
+            print(f"\n## Document {i}\n")
+            print(d.page_content)
+        retriever = vectorstore.as_retriever()
+        qa = ConversationalRetrievalChain.from_llm(llm, retriever=retriever, memory=memory)
+        haesan = qa(input_text)
+        st.info(haesan["answer"])
+        
+    except Exception as e:
+        print("Error creating retriever")
+        st.write(f"Exception occurred2: {str(e)}")
+        logging.error(f"Exception occurred: {str(e)}")  # 에러 메시지를 로그 파일에 기록
+
+def generate_response(input_text):
+    llm = OpenAI(temperature=0.5, openai_api_key=openai_api_key)
+    st.info(llm(input_text))
+
+with st.form("my_form"):
+    text = st.text_area("Enter text:", "김한준의 업무는?")
+    submitted = st.form_submit_button("Submit")
+    if not openai_api_key:
+        st.info("Please add your OpenAI API key to continue.")
+    elif submitted:
+        haesan_response(text) 
