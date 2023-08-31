@@ -101,11 +101,15 @@ from langchain.vectorstores import Chroma
 ## retriever
 from langchain.chat_models import ChatOpenAI
 from langchain.chains import ConversationalRetrievalChain
+from openai_embeddings import Embedder
+
 
 # llm = ChatOpenAI()
 def haesan_response(input_text):
     try:
         st.write("1")
+        embedder = Embedder("korean")
+        all_splits = embedder(all_splits)
         embedding = OpenAIEmbeddings(openai_api_key=openai_api_key,disallowed_special={"metadata"})
         st.write("4")
         try:

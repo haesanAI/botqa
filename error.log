@@ -1,0 +1,3 @@
+2023-08-31 14:12:47,366 - ERROR - Exception occurred Chroma1: Expected metadata value to be a str, int, float or bool, got None which is a <class 'NoneType'>
+
+Try filtering complex metadata from the document using langchain.vectorstore.utils.filter_complex_metadata.
