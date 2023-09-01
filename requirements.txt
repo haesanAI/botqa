@@ -13,3 +13,4 @@ pandas
 pyarrow>=10.0.1
 bs4
 openai_embeddings
+python-dotenv
