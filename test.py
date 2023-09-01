@@ -207,8 +207,10 @@ try:
         qa = ConversationalRetrievalChain.from_llm(llm, retriever=retriever,memory=memory)
         print("2")
         result = qa("김한준의 담당하는 업무는?")
-        print(result["answer"])
-        st.write(f"답변: {result["answer"]}")
+        result_s = result["answer"]
+        print(result_s)
+        
+        st.write(result_s)
         
         print("3") 
         
